@@ -1,14 +1,6 @@
----
-title: "Reproducible Research: Peer Assessment 1"
-output: 
-  html_document:
-    keep_md: true
----
+# Reproducible Research: Peer Assessment 1
 
-```{r setoptions, echo=FALSE}
-library(knitr)
-opts_chunk$set(echo=TRUE)
-```
+
 
 ## Loading and preprocessing the data
 Description:  
@@ -19,15 +11,37 @@ Description:
 > 
   
 * Set the working directory and read in the csv-file (with header, comma-separated).  
-```{r}
+
+```r
 data <- read.csv(unzip("activity.zip"), header=T, sep=",")
-```  
+```
 
 * Take a look at the data.
-```{r}
+
+```r
 head(data)
+```
+
+```
+##   steps       date interval
+## 1    NA 2012-10-01        0
+## 2    NA 2012-10-01        5
+## 3    NA 2012-10-01       10
+## 4    NA 2012-10-01       15
+## 5    NA 2012-10-01       20
+## 6    NA 2012-10-01       25
+```
+
+```r
 str(data)
-```  
+```
+
+```
+## 'data.frame':	17568 obs. of  3 variables:
+##  $ steps   : int  NA NA NA NA NA NA NA NA NA NA ...
+##  $ date    : Factor w/ 61 levels "2012-10-01","2012-10-02",..: 1 1 1 1 1 1 1 1 1 1 ...
+##  $ interval: int  0 5 10 15 20 25 30 35 40 45 ...
+```
 
 ## What is mean total number of steps taken per day?
 Description:  
@@ -39,7 +53,8 @@ Description:
 
 * First, create a function that would make a data frame out of given data specifying only the dates and total steps taken that day. This can be used later with imputed values as well.  
 * Ignore all the observations that have ``NA``'s as the values for ``steps`` by leaving them out when subsetting complete cases from the observations per each date. When one would simply ``sum`` the steps later with argument ``na.rm=TRUE``, then that would give zeros instead of ``NA``'s, which would rather be imputing the missing values.
-```{r}
+
+```r
 totalsteps <- function(dat, complete=T){
       stepsperday <- data.frame()
       for (level in levels(dat$date)){
@@ -57,20 +72,48 @@ totalsteps <- function(dat, complete=T){
       names(stepsperday) <- c("date", "total")
       return(stepsperday)
 }
-```  
+```
 
 * Take a look at the new data frame and then make a histogram of total number of steps taken each day.
-```{r}
+
+```r
 total_steps <- totalsteps(data, complete=T)
 head(total_steps)
+```
+
+```
+##         date total
+## 1 2012-10-02   126
+## 2 2012-10-03 11352
+## 3 2012-10-04 12116
+## 4 2012-10-05 13294
+## 5 2012-10-06 15420
+## 6 2012-10-07 11015
+```
+
+```r
 hist(total_steps$total, xlab="Total number of steps taken each day", main="Histogram")
-```  
+```
+
+![](./PA1_template_files/figure-html/unnamed-chunk-4-1.png) 
 
 * Calculate the mean and median for total steps taken each day.
-```{r mean_median}
+
+```r
 mean(total_steps$total)
+```
+
+```
+## [1] 10766.19
+```
+
+```r
 median(total_steps$total)
-```  
+```
+
+```
+## [1] 10765
+```
 
 ## What is the average daily activity pattern?
 Description:  
@@ -85,7 +128,8 @@ Description:
       - complete (should the missing values in the data set be counted as zeros (``=FALSE``) or be omitted (``=TRUE``))
       - rounding (should the averages be rounded (``=TRUE``) or not (``=FALSE``))  
 
-```{r averages}
+
+```r
 averageperinterval <- function(dat, minutes=T, complete=T, rounded=F) {
       stepsperinterval <- data.frame()
       for (inter in unique(dat$interval)) {
@@ -117,20 +161,29 @@ averageperinterval <- function(dat, minutes=T, complete=T, rounded=F) {
       names(stepsperinterval) <- c("interval", "steps_average")
       return(stepsperinterval)
 }
-```  
+```
 
 * Make a time series plot for average number of steps taken per interval (in minutes), averaged across all days. The plot only shows the averages not counting the NA's.
-```{r lineplot_averagesteps}
+
+```r
 average_per_minutes <- averageperinterval(data)
 plot(average_per_minutes$interval, average_per_minutes$steps_average, type="l", xlab="Minutes as intervals", ylab="Average number of steps", main="Average number of steps taken at a given time")
-```  
+```
+
+![](./PA1_template_files/figure-html/lineplot_averagesteps-1.png) 
 
 * The plot shows maximum average activity around 500 seconds, that is around 8:30AM. To find out, what is the exact time interval for the maximum number of steps taken on average, find the maximum with the function ``max()`` and subset the row with the maximum as the value for ``steps_average``.
-```{r max_steps}
+
+```r
 average_per_interval <- averageperinterval(data, minutes=F)
 maxsteps <- max(average_per_interval$steps_average)
 average_per_interval[average_per_interval$steps_average==maxsteps,]
-```  
+```
+
+```
+##     interval steps_average
+## 104      835      206.1698
+```
 
 * The maximum steps taken on average is at 8:35AM.
 
@@ -145,22 +198,39 @@ Description:
 > 
 
 * Find rows that have missing values in them by counting the number of rows that have the value ``TRUE`` for ``is.na``.
-```{r missing values}
+
+```r
 missing_values <- is.na(data$steps)
 nrow(data[missing_values,])
-```  
+```
+
+```
+## [1] 2304
+```
 
 * The most suitable would seem to replace the missing values with the rounded number of average steps taken per interval (not counting the NA's as zeros). Rounding for replacement seems reasonable, since it is very unlikely to take anything else but full steps... 
 * Just to check, print on the first rows of the data frame.
-```{rounded averages}
+
+```r
 head(averageperinterval(data, minutes=F, rounded=T))
-```  
+```
+
+```
+##   interval steps_average
+## 1        0             2
+## 2        5             0
+## 3       10             0
+## 4       15             0
+## 5       20             0
+## 6       25             2
+```
 
 * Merge the original data frame and the rounded averages data frame into a new data frame ``data2``. This changes the order of the columns in the new data frame (interval, steps, date, steps_average), but that doesn't really matter.  
 * Then create another new data frame from ``data2`` called ``data3`` and add a new column ``Steps`` that contains the same information that the column ``steps``.  
 * Then, in the new data frame (``data3``), replace the values of ``steps`` in the rows that contain missing values with the values of ``steps_average`` in the same rows.
 * Finally, subset only the columns 5, 3 and 1 (``Steps``, ``date`` and ``interval``, respectively) and create a final data frame ``data_imputed``. Change the name of the first column to ``steps``.
-```{r imputing missing values}
+
+```r
 data2 <- merge(data, averageperinterval(data, minutes=F, rounded=T), by="interval")
 data3 <- data2
 data3$Steps <- data3$steps
@@ -168,26 +238,52 @@ data3_missing <- is.na(data3$steps)
 data3$Steps[data3_missing] <- data3$steps_average[data3_missing]
 data_imputed <- data3[,c(5,3,1)]
 colnames(data_imputed)[1] <- "steps"
-```  
+```
 
 * Create a new dataset with the imputed values with the function ``totalsteps()`` defined earlier.
-```{r no missing values}
+
+```r
 steps_imputed <- totalsteps(data_imputed, complete=F)
 head(steps_imputed)
-```  
+```
+
+```
+##         date total
+## 1 2012-10-01 10762
+## 2 2012-10-02   126
+## 3 2012-10-03 11352
+## 4 2012-10-04 12116
+## 5 2012-10-05 13294
+## 6 2012-10-06 15420
+```
 
 * As we can see, the steps that were all ``NA``'s and not computed with in the ``total_steps`` data frame before (for example for the date "2012-10-01"), have now gotten total values based on the averages per intervals across other dates in the dataset.  
 
 * Make a histogram of the dataset with imputed values.
-```{r histogram_stepsimputed}
+
+```r
 hist(steps_imputed$total, xlab="Total number of steps taken each day", main="Histogram with imputed values")
-```  
+```
+
+![](./PA1_template_files/figure-html/histogram_stepsimputed-1.png) 
 
 * Get the mean and median for the total number of steps taken (with imputed values).
-```{r mean_median2}
+
+```r
 mean(steps_imputed$total)
+```
+
+```
+## [1] 10765.64
+```
+
+```r
 median(steps_imputed$total)
-```  
+```
+
+```
+## [1] 10762
+```
 
 * The median from the imputed data has gone down a bit compared to the median of the dataset with omitted ``NA``'s. The mean has slightly dropped as well, but there seem to be no big differences between the two analyses.  
 
@@ -203,31 +299,56 @@ Description:
 * Set the system to English with the function ``Sys.setlocale()``.
 * Add another factor (column) called ``day`` using the function ``weekdays()``. 
 * Check the levels of the factor ``day`` and change them into a binary opposition between weekdays and weekend days (so Monday, Tuesday, Wednesday, Thursday and Friday would correspond to weekdays and Saturday and Sunday to weekend days).   
-```{r weekdays}
+
+```r
 data_times <- data_imputed
 data_times$date <- strptime(data_times$date, format="%Y-%m-%d")
 Sys.setlocale("LC_TIME", "English")
+```
+
+```
+## [1] "English_United States.1252"
+```
+
+```r
 data_times$day <- factor(weekdays(data_times$date))
 levels(data_times$day)
+```
+
+```
+## [1] "Friday"    "Monday"    "Saturday"  "Sunday"    "Thursday"  "Tuesday"  
+## [7] "Wednesday"
+```
+
+```r
 levels(data_times$day) <- c("weekday", "weekday", "weekend", "weekend", "weekday", "weekday", "weekday")
-```  
+```
 
 * Subset the ``data_times`` into two separate data frames: one with weekdays in it and one with weekend days in it. Check if the sum of the number of rows in both datasets adds up to the number of rows in the ``data_times`` dataset.
-```{r daysplit}
+
+```r
 weekdays <- droplevels(subset(data_times, day=="weekday"))
 weekend <- droplevels(subset(data_times, day=="weekend"))
 nrow(data_times)==nrow(weekdays)+nrow(weekend)
-```  
+```
+
+```
+## [1] TRUE
+```
 
 * Create two data frames for weekdays and weekend using the function ``averageperinterval()`` defined earlier.
-```{r}
+
+```r
 weekday_average <- averageperinterval(weekdays, complete=F)
 weekend_average <- averageperinterval(weekend, complete=F)
-```  
+```
 
 * Finally make a panel plot of the average steps taken per interval for weekdays and weekend. I am using the base package, because I haven't learnt how to use ggplot yet, but I hope this gives the overall same results as would plots done with ggplot.
-```{r panel plot}
+
+```r
 par(mfrow=c(2,1))
 plot(weekday_average$interval, weekday_average$steps_average, type="l", xlab="Minutes as intervals", ylab="Average number of steps", main="Weekday")
 plot(weekend_average$interval, weekend_average$steps_average, type="l", xlab="Minutes as intervals", ylab="Average number of steps", main="Weekend")
 ```
+
+![](./PA1_template_files/figure-html/panel plot-1.png) 
